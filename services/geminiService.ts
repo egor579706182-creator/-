@@ -12,11 +12,18 @@ export const analyzeResults = async (
   questions: Question[], 
   answers: Record<number, string>
 ): Promise<AssessmentResult> => {
-  // Проверяем оба варианта ключа для совместимости с разными сборщиками (Vite/Webpack)
-  const apiKey = process.env.API_KEY || (process.env as any).VITE_API_KEY;
+  /**
+   * Пытаемся получить ключ из всех возможных источников для максимальной совместимости.
+   * Vite требует import.meta.env, другие сборщики process.env.
+   */
+  const apiKey = 
+    process.env.API_KEY || 
+    (process.env as any).VITE_API_KEY || 
+    (import.meta as any).env?.VITE_API_KEY || 
+    (import.meta as any).env?.API_KEY;
   
   if (!apiKey) {
-    throw new Error("Критическая ошибка: API_KEY не обнаружен. Убедитесь, что вы добавили API_KEY или VITE_API_KEY в Environment Variables на Vercel и сделали Redeploy.");
+    throw new Error("СИСТЕМНОЕ УВЕДОМЛЕНИЕ: API_KEY не обнаружен. На Vercel добавьте VITE_API_KEY в Environment Variables (раздел 'Production') и ОБЯЗАТЕЛЬНО сделайте REDEPLOY во вкладке 'Deployments', чтобы ключ попал в сборку сайта.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
