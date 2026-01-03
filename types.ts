@@ -7,7 +7,7 @@ export enum Gender {
 export interface Question {
   id: number;
   text: string;
-  options: string[]; // Exactly 5 one-word options
+  options: string[]; // 5 вариантов ответа, специфичных для вопроса
 }
 
 export interface UserData {

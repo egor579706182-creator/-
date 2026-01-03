@@ -7,21 +7,39 @@
     <title>CommuniCare AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+      // Полифил для process.env, чтобы избежать ReferenceError в браузере
+      window.process = window.process || { env: {} };
+    </script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #fcfcfc;
+            background-color: #fafafa;
             color: #1a1a1a;
             -webkit-font-smoothing: antialiased;
-        }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(230, 230, 230, 0.5);
         }
         @page {
             size: A4;
             margin: 20mm;
+        }
+
+        /* Анимация плавного парения облаков */
+        @keyframes floatCloud {
+            0% { transform: translateX(-20px) translateY(0); }
+            50% { transform: translateX(20px) translateY(-15px); }
+            100% { transform: translateX(-20px) translateY(0); }
+        }
+
+        .animate-cloud-slow {
+            animation: floatCloud 8s ease-in-out infinite;
+        }
+
+        .animate-cloud-fast {
+            animation: floatCloud 5s ease-in-out infinite;
+        }
+
+        .animate-cloud-medium {
+            animation: floatCloud 6.5s ease-in-out infinite;
         }
     </style>
 <script type="importmap">

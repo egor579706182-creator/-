@@ -3,20 +3,6 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Question, UserData, AssessmentResult } from "../types";
 import { getLocalQuestions } from "../data/questions";
 
-/**
- * Безопасно получаем API ключ, не вызывая ReferenceError в браузере.
- */
-const getSafeApiKey = (): string => {
-  try {
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-      return process.env.API_KEY;
-    }
-  } catch (e) {
-    // В некоторых средах обращение к process может быть заблокировано
-  }
-  return '';
-};
-
 export const fetchQuestionsSync = (userData: UserData): Question[] => {
   return getLocalQuestions(userData.age);
 };
@@ -26,35 +12,39 @@ export const analyzeResults = async (
   questions: Question[], 
   answers: Record<number, string>
 ): Promise<AssessmentResult> => {
-  const apiKey = getSafeApiKey();
+  const apiKey = process.env.API_KEY;
   
   if (!apiKey) {
-    throw new Error("API_KEY не настроен. Пожалуйста, добавьте его в переменные окружения Vercel.");
+    throw new Error("API_KEY не обнаружен. Пожалуйста, убедитесь, что ключ добавлен в Environment Variables вашего проекта на Vercel.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
   
-  const formattedAnswers = questions.map(q => `Вопрос: ${q.text} | Ответ: ${answers[q.id]}`).join("\n");
+  const formattedAnswers = questions.map(q => `Вопрос: ${q.text} | Ответ родителя: ${answers[q.id]}`).join("\n");
 
-  const prompt = `Проведи экспертную клиническую оценку коммуникативного развития ребенка.
-  Данные пациента: возраст ${userData.age} лет, пол ${userData.gender}.
-  Результаты тестирования:
+  const prompt = `Ты — ведущий мировой эксперт в области нейролингвистики и детской психопатологии. Твоя задача — провести глубокий клинический анализ коммуникативного развития ребенка.
+
+  Данные пациента:
+  - Возраст: ${userData.age} лет
+  - Пол: ${userData.gender}
+  
+  Результаты детального тестирования (30 параметров):
   ${formattedAnswers}
 
-  Твоя задача: Составить профессиональное заключение для родителей и специалистов.
-  - Подробный анализ текущего уровня (речь, социальное взаимодействие, невербалика).
-  - 7 конкретных, научно-обоснованных рекомендаций для занятий дома и со специалистами.
-  - Долгосрочный прогноз развития.
-  - Научный контекст на основе мировых стандартов (ICD-11 / DSM-5).
+  ИНСТРУКЦИИ ПО ФОРМИРОВАНИЮ ОТВЕТА:
+  1. "analysis": Дай развернутый анализ. Оцени прагматику речи, социальное взаимодействие, когнитивные предпосылки и невербальные компоненты. Пиши строго, профессионально, БЕЗ грамматических и пунктуационных ошибок.
+  2. "recommendations": Сформулируй 7 практических шагов. Они должны быть научно обоснованы (логопедические методики, сенсорная интеграция, поведенческая терапия).
+  3. "prognosis": Составь прогноз на 2-3 года. Укажи возможные риски и зоны роста при условии коррекционной работы.
+  4. "scientificContext": Опиши состояние в контексте современных классификаций (МКБ-11, раздел 6A02, или DSM-5).
 
-  Требования к оформлению:
-  - НЕ используй жирное выделение (никаких **).
-  - Язык: Русский.
-  - Стиль: Строгий, клинический, но поддерживающий.
-  - Формат ответа: Только чистый JSON.`;
+  КРИТИЧЕСКИЕ ТРЕБОВАНИЯ К ЯЗЫКУ:
+  - Исключительно безупречный русский язык.
+  - Никакой избыточной разметки (запрещено использование **, ##, __).
+  - Ответ должен быть в формате JSON.
+  - Текст должен быть связным, логичным и эмпатичным по отношению к родителям.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash-exp",
+    model: "gemini-3-pro-preview",
     contents: prompt,
     config: {
       responseMimeType: "application/json",
@@ -72,6 +62,12 @@ export const analyzeResults = async (
   });
 
   const text = response.text;
-  if (!text) throw new Error("Пустой ответ от нейросети");
-  return JSON.parse(text);
+  if (!text) throw new Error("Модель не вернула данные. Попробуйте еще раз.");
+  
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("JSON Parsing error:", text);
+    throw new Error("Ошибка обработки данных. Пожалуйста, повторите попытку через минуту.");
+  }
 };
