@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
 import { AssessmentResult, UserData } from '../types';
 
 interface ResultViewProps {
@@ -8,99 +8,96 @@ interface ResultViewProps {
 }
 
 export const ResultView: React.FC<ResultViewProps> = ({ result, userData }) => {
-  const reportRef = useRef<HTMLDivElement>(null);
+  const [isSending, setIsSending] = useState(false);
+  const reportRef = React.useRef<HTMLDivElement>(null);
+
+  const handleSendToChat = async () => {
+    const tg = (window as any).Telegram?.WebApp;
+    const chatId = tg?.initDataUnsafe?.user?.id;
+
+    if (!chatId) {
+      alert("Пожалуйста, запустите приложение из Telegram для отправки результата.");
+      return;
+    }
+
+    setIsSending(true);
+    
+    const textReport = `<b>📊 РЕЗУЛЬТАТЫ CommuniCare AI</b>\n` +
+      `<b>Ребенок:</b> ${userData.gender}, ${userData.age} лет\n\n` +
+      `<b>АНАЛИЗ:</b>\n${result.analysis}\n\n` +
+      `<b>РЕКОМЕНДАЦИИ:</b>\n${result.recommendations.map((r, i) => `${i+1}. ${r}`).join('\n')}\n\n` +
+      `<b>ПРОГНОЗ:</b>\n${result.prognosis}\n\n` +
+      `<i>Основано на: ${result.scientificContext}</i>`;
+
+    try {
+      await fetch('/api/bot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send_text',
+          chatId: chatId,
+          text: textReport
+        })
+      });
+      alert("Текстовый отчет отправлен в ваш чат с ботом!");
+    } catch (e) {
+      alert("Ошибка при отправке.");
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const handleDownloadPDF = () => {
     if (!reportRef.current) return;
-    
-    const element = reportRef.current;
-    
-    // Настройки для идеального попадания в А4
     const opt = {
-      margin: [10, 10, 10, 10],
+      margin: 10,
       filename: `Report_${userData.age}y.pdf`,
-      image: { type: 'jpeg', quality: 1 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true,
-        letterRendering: true
-      },
+      html2canvas: { scale: 2 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
-
     // @ts-ignore
-    html2pdf().from(element).set(opt).save();
-
-    const tg = (window as any).Telegram?.WebApp;
-    if (tg) {
-      tg.HapticFeedback.notificationOccurred('success');
-    }
+    html2pdf().from(reportRef.current).set(opt).save();
   };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-1000">
-      {/* Контейнер отчета - оптимизирован для одной страницы А4 */}
-      <div 
-        ref={reportRef} 
-        className="bg-white p-4 text-[#1a1a1a]"
-        style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}
-      >
-        <div className="border-b-2 border-gray-900 pb-4 mb-6">
-          <h2 className="text-2xl font-bold uppercase tracking-tight">Заключение CommuniCare AI</h2>
-          <div className="flex justify-between items-center mt-2">
-            <p className="text-xs font-medium uppercase text-gray-500">
-              Пациент: {userData.gender}, {userData.age} лет
-            </p>
-            <p className="text-[10px] text-gray-400 uppercase">Дата: {new Date().toLocaleDateString()}</p>
+      <div ref={reportRef} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+        <h2 className="text-xl font-bold border-b pb-4 mb-4 uppercase tracking-tighter">Результаты анализа</h2>
+        
+        <div className="space-y-6 text-sm">
+          <div>
+            <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">Краткий вывод</p>
+            <p className="text-gray-700 leading-relaxed">{result.analysis}</p>
           </div>
-        </div>
-
-        <div className="space-y-6">
-          <section>
-            <h4 className="text-[10px] uppercase font-black tracking-widest mb-2 text-gray-400">01. Анализ состояния</h4>
-            <p className="text-sm leading-relaxed text-justify">
-              {result.analysis}
-            </p>
-          </section>
-
-          <section>
-            <h4 className="text-[10px] uppercase font-black tracking-widest mb-2 text-gray-400">02. Рекомендации</h4>
-            <div className="grid grid-cols-1 gap-1">
-              {result.recommendations.map((rec, i) => (
-                <div key={i} className="flex gap-2 text-sm leading-snug">
-                  <span className="font-bold">{i + 1}.</span>
-                  <span>{rec}</span>
-                </div>
+          
+          <div>
+            <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">Рекомендации</p>
+            <ul className="space-y-2">
+              {result.recommendations.map((r, i) => (
+                <li key={i} className="text-gray-700 pl-4 border-l-2 border-blue-50">{r}</li>
               ))}
-            </div>
-          </section>
-
-          <section>
-            <h4 className="text-[10px] uppercase font-black tracking-widest mb-2 text-gray-400">03. Прогноз</h4>
-            <p className="text-sm leading-relaxed italic">
-              {result.prognosis}
-            </p>
-          </section>
-
-          <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
-            <h4 className="text-[9px] uppercase font-black tracking-widest mb-1 text-gray-400">Научная база</h4>
-            <p className="text-[10px] text-gray-500 leading-tight">
-              {result.scientificContext}
-            </p>
+            </ul>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 print:hidden">
+      <div className="flex flex-col gap-3">
+        <button
+          onClick={handleSendToChat}
+          disabled={isSending}
+          className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition-all disabled:opacity-50"
+        >
+          {isSending ? "Отправка..." : "Отправить в мой чат (Текст)"}
+        </button>
         <button
           onClick={handleDownloadPDF}
-          className="w-full py-4 bg-gray-900 text-white rounded-2xl text-xs tracking-widest hover:bg-black transition-all uppercase font-bold"
+          className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-black"
         >
-          Скачать отчет (PDF)
+          Скачать PDF
         </button>
         <button
           onClick={() => window.location.reload()}
-          className="w-full py-4 border border-gray-200 text-gray-400 rounded-2xl text-xs tracking-widest hover:bg-gray-50 transition-all uppercase"
+          className="w-full py-3 text-gray-400 text-[10px] uppercase tracking-widest"
         >
           Пройти заново
         </button>

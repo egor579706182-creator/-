@@ -1,53 +1,33 @@
 
 /**
- * Этот файл предназначен для запуска на Node.js сервере.
- * Он демонстрирует, как реализовать опрос прямо в чате Telegram.
+ * Пример функции для генерации текстового ответа в чате (без PDF).
+ * Эту логику можно вставить в api/bot.js когда все ответы собраны.
  */
 
-/* 
-const { Telegraf, Markup } = require('telegraf');
-const { GoogleGenAI } = require('@google/genai');
+async function sendTextResult(chatId, userData, answers) {
+  // Вызов Gemini (аналогично geminiService.ts)
+  // ... логика получения result от Gemini ...
 
-const bot = new Telegraf(process.env.BOT_TOKEN);
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const resultText = `
+📊 РЕЗУЛЬТАТЫ АНАЛИЗА (CommuniCare AI)
+Пациент: ${userData.gender}, ${userData.age} лет
 
-// Хранилище сессий (в реальности лучше Redis)
-const sessions = new Map();
+🔍 АНАЛИЗ СОСТОЯНИЯ:
+${result.analysis}
 
-bot.command('start', (ctx) => {
-  ctx.reply('Привет! Я CommuniCare AI. Выберите формат работы:', 
-    Markup.inlineKeyboard([
-      [Markup.button.webApp('Открыть Mini App (Красивый интерфейс)', 'ваша-ссылка-vercel')],
-      [Markup.button.callback('Пройти тест прямо здесь (Текстовый режим)', 'start_chat_test')]
-    ])
-  );
-});
+✅ РЕКОМЕНДАЦИИ:
+${result.recommendations.map((r, i) => `${i + 1}. ${r}`).join('\n')}
 
-bot.action('start_chat_test', (ctx) => {
-  sessions.set(ctx.from.id, { step: 0, answers: [], userData: { age: 3, gender: 'Мальчик' } });
-  sendNextQuestion(ctx);
-});
+📈 ПРОГНОЗ:
+${result.prognosis}
 
-function sendNextQuestion(ctx) {
-  const session = sessions.get(ctx.from.id);
-  const questions = getQuestionsForAge(session.userData.age); // Импортировать из вашего data/questions.ts
-  
-  if (session.step < questions.length) {
-    const q = questions[session.step];
-    ctx.reply(q.text, Markup.inlineKeyboard(
-      q.options.map((opt, i) => [Markup.button.callback(opt, `ans_${i}`)])
-    ));
-  } else {
-    generateFinalReport(ctx);
-  }
+📚 НАУЧНАЯ БАЗА:
+${result.scientificContext}
+
+-----------------------------
+Данный отчет сформирован ИИ. Рекомендуется консультация специалиста.
+  `;
+
+  // Отправка в Telegram
+  // await sendTg('sendMessage', { chat_id: chatId, text: resultText });
 }
-
-async function generateFinalReport(ctx) {
-  ctx.reply('Спасибо! Идет глубокий анализ данных...');
-  // Тут вызываем Gemini API аналогично нашему geminiService.ts
-  // После получения JSON, генерируем PDF (например библиотекой pdfkit) 
-  // И отправляем файл: ctx.replyWithDocument({ source: Buffer, filename: 'Report.pdf' });
-}
-
-bot.launch();
-*/
