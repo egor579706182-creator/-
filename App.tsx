@@ -22,15 +22,19 @@ const App: React.FC = () => {
   const handleStart = () => setState(prev => ({ ...prev, step: 'info' }));
 
   const handleInfoSubmit = (userData: UserData) => {
-    const questions = fetchQuestionsSync(userData);
-    setState(prev => ({ 
-      ...prev, 
-      userData, 
-      questions, 
-      step: 'testing', 
-      currentQuestionIndex: 0,
-      error: null 
-    }));
+    try {
+      const questions = fetchQuestionsSync(userData);
+      setState(prev => ({ 
+        ...prev, 
+        userData, 
+        questions, 
+        step: 'testing', 
+        currentQuestionIndex: 0,
+        error: null 
+      }));
+    } catch (err) {
+      setState(prev => ({ ...prev, error: "Ошибка при загрузке базы вопросов." }));
+    }
   };
 
   const handleAnswer = (answer: string) => {
@@ -56,12 +60,12 @@ const App: React.FC = () => {
         const result = await analyzeResults(state.userData, state.questions, finalAnswers);
         setState(prev => ({ ...prev, result, step: 'result' }));
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error("Assessment error:", err);
       setState(prev => ({ 
         ...prev, 
         step: 'testing', 
-        error: 'ОШИБКА АНАЛИЗА. ПРОВЕРЬТЕ API КЛЮЧ В НАСТРОЙКАХ VERCEL.' 
+        error: `ОШИБКА АНАЛИЗА: ${err?.message || "Проверьте API_KEY в настройках окружения."}` 
       }));
     }
   };
@@ -69,8 +73,9 @@ const App: React.FC = () => {
   return (
     <Layout>
       {state.error && (
-        <div className="mb-8 p-4 bg-red-50 text-red-600 text-[10px] rounded-xl text-center uppercase tracking-widest font-medium border border-red-100">
-          {state.error}
+        <div className="mb-8 p-4 bg-red-50 text-red-600 text-[11px] rounded-xl text-center border border-red-100 font-medium">
+          <p className="uppercase tracking-widest mb-1">Упс! Что-то пошло не так</p>
+          <p className="opacity-70">{state.error}</p>
         </div>
       )}
 
@@ -85,8 +90,14 @@ const App: React.FC = () => {
         />
       )}
       {state.step === 'analyzing' && (
-        <div className="text-center py-20 space-y-6">
-          <div className="w-10 h-10 border-t-2 border-gray-900 rounded-full animate-spin mx-auto opacity-20" />
+        <div className="text-center py-20 space-y-8 animate-pulse">
+          <div className="w-12 h-12 border-t-2 border-gray-900 rounded-full animate-spin mx-auto opacity-30" />
+          <div className="space-y-3">
+            <h3 className="text-sm font-light text-gray-800 uppercase tracking-widest">Проводим глубокий анализ</h3>
+            <p className="text-[10px] text-gray-400 max-w-[240px] mx-auto leading-relaxed">
+              Обрабатываем ответы с использованием нейросетевых моделей Gemini и клинических баз данных
+            </p>
+          </div>
         </div>
       )}
       {state.step === 'result' && state.result && state.userData && (
