@@ -27,6 +27,16 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
+    // Инициализация Telegram WebApp
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      // Настройка темы под Telegram
+      document.body.style.backgroundColor = tg.themeParams.bg_color || '#fafafa';
+      document.body.style.color = tg.themeParams.text_color || '#1a1a1a';
+    }
+    
     const timer = setTimeout(() => setIsReady(true), 100);
     return () => clearTimeout(timer);
   }, []);
@@ -110,7 +120,6 @@ const App: React.FC = () => {
             <CloudIcon className="w-24 h-24 text-gray-400 absolute top-0 left-10 animate-cloud-slow" />
             <CloudIcon className="w-32 h-32 text-gray-500 absolute bottom-10 right-10 animate-cloud-medium" />
           </div>
-
           <div className="relative z-10 space-y-8">
             <div className="w-16 h-16 border-t-2 border-gray-900 rounded-full animate-spin mx-auto opacity-20" />
             <div className="space-y-2">
