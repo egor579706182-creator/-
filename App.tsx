@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { InfoForm } from './components/InfoForm';
@@ -9,6 +9,7 @@ import { AppState, UserData } from './types';
 import { fetchQuestionsSync, analyzeResults } from './services/geminiService';
 
 const App: React.FC = () => {
+  const [isReady, setIsReady] = useState(false);
   const [state, setState] = useState<AppState>({
     step: 'welcome',
     userData: null,
@@ -18,6 +19,13 @@ const App: React.FC = () => {
     result: null,
     error: null,
   });
+
+  // Убеждаемся, что компонент монтируется без ошибок окружения
+  useEffect(() => {
+    setIsReady(true);
+  }, []);
+
+  if (!isReady) return null;
 
   const handleStart = () => setState(prev => ({ ...prev, step: 'info' }));
 
@@ -65,7 +73,7 @@ const App: React.FC = () => {
       setState(prev => ({ 
         ...prev, 
         step: 'testing', 
-        error: `ОШИБКА АНАЛИЗА: ${err?.message || "Проверьте API_KEY в настройках окружения."}` 
+        error: `ОШИБКА: ${err?.message || "Проблема при анализе данных. Проверьте API_KEY."}` 
       }));
     }
   };
@@ -73,8 +81,8 @@ const App: React.FC = () => {
   return (
     <Layout>
       {state.error && (
-        <div className="mb-8 p-4 bg-red-50 text-red-600 text-[11px] rounded-xl text-center border border-red-100 font-medium">
-          <p className="uppercase tracking-widest mb-1">Упс! Что-то пошло не так</p>
+        <div className="mb-8 p-4 bg-red-50 text-red-600 text-[11px] rounded-xl text-center border border-red-100 font-medium animate-in fade-in">
+          <p className="uppercase tracking-widest mb-1 font-bold">Системное уведомление</p>
           <p className="opacity-70">{state.error}</p>
         </div>
       )}
@@ -93,9 +101,9 @@ const App: React.FC = () => {
         <div className="text-center py-20 space-y-8 animate-pulse">
           <div className="w-12 h-12 border-t-2 border-gray-900 rounded-full animate-spin mx-auto opacity-30" />
           <div className="space-y-3">
-            <h3 className="text-sm font-light text-gray-800 uppercase tracking-widest">Проводим глубокий анализ</h3>
+            <h3 className="text-sm font-light text-gray-800 uppercase tracking-widest">Анализируем развитие</h3>
             <p className="text-[10px] text-gray-400 max-w-[240px] mx-auto leading-relaxed">
-              Обрабатываем ответы с использованием нейросетевых моделей Gemini и клинических баз данных
+              Формируем клиническое заключение на основе предоставленных ответов
             </p>
           </div>
         </div>

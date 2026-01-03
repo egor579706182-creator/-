@@ -4,21 +4,17 @@ import { Question, UserData, AssessmentResult } from "../types";
 import { getLocalQuestions } from "../data/questions";
 
 /**
- * Инициализирует экземпляр AI. 
- * Используем блок try-catch или проверку, чтобы избежать ReferenceError на Vercel,
- * если процесс не полифиллится автоматически.
+ * Безопасно получаем API ключ, не вызывая ReferenceError в браузере.
  */
-const createAIInstance = () => {
+const getSafeApiKey = (): string => {
   try {
-    const apiKey = process.env.API_KEY;
-    if (!apiKey) {
-      console.error("API_KEY is not defined in environment variables");
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      return process.env.API_KEY;
     }
-    return new GoogleGenAI({ apiKey: apiKey || "" });
   } catch (e) {
-    console.error("Critical error accessing process.env.API_KEY:", e);
-    return null;
+    // В некоторых средах обращение к process может быть заблокировано
   }
+  return '';
 };
 
 export const fetchQuestionsSync = (userData: UserData): Question[] => {
@@ -30,8 +26,13 @@ export const analyzeResults = async (
   questions: Question[], 
   answers: Record<number, string>
 ): Promise<AssessmentResult> => {
-  const ai = createAIInstance();
-  if (!ai) throw new Error("AI initialization failed");
+  const apiKey = getSafeApiKey();
+  
+  if (!apiKey) {
+    throw new Error("API_KEY не настроен. Пожалуйста, добавьте его в переменные окружения Vercel.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   
   const formattedAnswers = questions.map(q => `Вопрос: ${q.text} | Ответ: ${answers[q.id]}`).join("\n");
 
@@ -53,7 +54,7 @@ export const analyzeResults = async (
   - Формат ответа: Только чистый JSON.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-pro-preview",
+    model: "gemini-2.0-flash-exp",
     contents: prompt,
     config: {
       responseMimeType: "application/json",
@@ -71,6 +72,6 @@ export const analyzeResults = async (
   });
 
   const text = response.text;
-  if (!text) throw new Error("Empty response from AI");
+  if (!text) throw new Error("Пустой ответ от нейросети");
   return JSON.parse(text);
 };
