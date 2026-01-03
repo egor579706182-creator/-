@@ -105,38 +105,17 @@ const App: React.FC = () => {
         />
       )}
       {state.step === 'analyzing' && (
-        <div className="text-center py-20 space-y-16 animate-in fade-in duration-1000 relative overflow-hidden">
-          {/* Контейнер для облаков */}
+        <div className="text-center py-24 space-y-12 animate-in fade-in duration-1000 relative overflow-hidden">
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-10">
             <CloudIcon className="w-24 h-24 text-gray-400 absolute top-0 left-10 animate-cloud-slow" />
             <CloudIcon className="w-32 h-32 text-gray-500 absolute bottom-10 right-10 animate-cloud-medium" />
-            <CloudIcon className="w-20 h-20 text-gray-400 absolute top-1/2 left-1/4 animate-cloud-fast" />
           </div>
 
-          <div className="relative z-10 space-y-12">
-            <div className="w-24 h-24 border-t-2 border-gray-900 rounded-full animate-spin mx-auto opacity-10" />
-            
-            <div className="space-y-4 px-4">
-              <h3 className="text-xl font-light text-gray-900 tracking-tight">Идет глубокий экспертный анализ...</h3>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-500 font-light leading-relaxed max-w-[400px] mx-auto">
-                  Это может занять до 1-2 минут. Искусственный интеллект сопоставляет ответы с клиническими базами данных МКБ-11 и DSM-5.
-                </p>
-                <p className="text-[10px] text-gray-300 uppercase tracking-[0.3em]">
-                  Пожалуйста, не закрывайте страницу
-                </p>
-              </div>
-            </div>
-
-            {/* Дополнительная визуальная индикация прогресса */}
-            <div className="flex justify-center gap-1">
-              {[0, 1, 2].map((i) => (
-                <div 
-                  key={i} 
-                  className="w-1.5 h-1.5 rounded-full bg-gray-900 animate-bounce" 
-                  style={{ animationDelay: `${i * 0.2}s` }}
-                />
-              ))}
+          <div className="relative z-10 space-y-8">
+            <div className="w-16 h-16 border-t-2 border-gray-900 rounded-full animate-spin mx-auto opacity-20" />
+            <div className="space-y-2">
+              <h3 className="text-xl font-light text-gray-900 tracking-tight">Идет обработка данных...</h3>
+              <p className="text-sm text-gray-400 font-light">Пожалуйста, подождите</p>
             </div>
           </div>
         </div>
